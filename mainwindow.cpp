@@ -12,16 +12,17 @@ View::View(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWindow)
     ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->pb_remove->setEnabled(false);
     ui->pb_edit->setEnabled(false);
+    ui->le_search->setPlaceholderText("Filter by name or roll ID");
 
+    //segnali da mainWindow verso l'etere
     connect(ui->pb_remove, &QPushButton::clicked, this, &View::slot_pb_remove_clicked);
     connect(ui->pb_add, &QPushButton::clicked, this, &View::slot_pb_add_clicked);
     connect(ui->tableView, &CustomTableView::sig_table_clicked, this, &View::slot_table_view_clicked);
+    connect(ui->le_search, &QLineEdit::textChanged, this, &View::slot_search_le_changed);
 
+    //segnali da e verso addStudent_window
     p_addStudent_window = new AddStudent_window(this);
-    connect(p_addStudent_window, &AddStudent_window::sig_okButtonClicked, this, &View::slot_addStudent_okButtonClicked);
-    connect(p_addStudent_window, &AddStudent_window::sig_cancelButtonClicked, this, &View::slot_addStudent_cancelButtonClicked);
-
-    connect(this, &View::sig_studentAlreadyExists, p_addStudent_window, &AddStudent_window::slot_studentAlreadyExists);
+    connect(p_addStudent_window, &AddStudent_window::sig_okButtonClicked, this, &View::sig_addStudent_okButtonClicked);
 }
 
 Ui::MainWindow* View::get_ui_element()
@@ -35,19 +36,8 @@ void View::slot_pb_add_clicked()
 }
 
 void View::slot_addStudent_okButtonClicked(QLineEdit& le_roll_id, QLineEdit& le_name, QLineEdit& le_gpa)
-{   
+{
     emit sig_addStudent_okButtonClicked(le_roll_id, le_name, le_gpa);
-    p_addStudent_window->accept();
-}
-
-void View::slot_addStudent_cancelButtonClicked()
-{
-    p_addStudent_window->reject();
-}
-
-void View::slot_studentAlreadyExists(int roll_id)
-{
-    emit sig_studentAlreadyExists(roll_id);
 }
 
 void View::slot_pb_remove_clicked()
@@ -77,6 +67,46 @@ void View::slot_table_view_clicked(bool isIndexValid)
 {
     ui->pb_remove->setEnabled(isIndexValid);
     ui->pb_edit->setEnabled(isIndexValid);
+}
+
+void View::slot_search_le_changed(const QString& text)
+{
+    if(text.isEmpty())
+    {
+        for(int row=0; row < ui->tableView->model()->rowCount(); row++)
+            ui->tableView->setRowHidden(row, false);
+
+        return;
+    }
+
+    else searchElement(text);
+}
+
+void View::searchElement(const QString& text)
+{
+    QModelIndexList matches;
+
+    //cerca text nelle prime 2 colonne e aggiungi in lista gli indici di tutte le celle che lo matchano
+    for(int col=0; col<2; col++)
+        matches += (ui->tableView->model()->match(ui->tableView->model()->index(0, col), Qt::DisplayRole, text, -1, Qt::MatchContains));
+
+    //cicla tutte le righe:
+    for(int row=0; row<ui->tableView->model()->rowCount(); row++)
+    {
+        bool matchFound = false;
+
+        //cicla tutte le colonne della riga. Se l' indice della cella (row, col) compare in matches, mi fermo e setto matchFound=true
+        for(int col=0; col<2; col++)
+        {
+            QModelIndex current_idx = ui->tableView->model()->index(row, col);
+            if(matches.contains(current_idx))
+            {
+                matchFound = true;
+                break;
+            }
+        }
+        ui->tableView->setRowHidden(row, !matchFound);
+    }
 }
 
 

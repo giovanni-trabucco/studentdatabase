@@ -11,16 +11,10 @@ Controller::Controller(Model *model, View *view, QWidget *parent) : QWidget(pare
     pb_edit = p_view->get_ui_element()->pb_edit;
     pb_remove = p_view->get_ui_element()->pb_remove;
 
-    p_view->get_ui_element()->tableView->setModel(model);
+    p_view->get_ui_element()->tableView->setModel(p_model);
+    p_view->get_ui_element()->tableView->sortByColumn(0, Qt::AscendingOrder);
 
-    connect(p_view, &View::sig_pb_remove_clicked, this, &Controller::slot_pb_remove_clicked);
-    connect(p_view, &View::sig_addStudent_okButtonClicked, this, &Controller::slot_addStudent_okButtonClicked);
-
-    connect(this, &Controller::sig_pb_remove_clicked, p_model, &Model::slot_pb_remove_clicked);
-    connect(this, &Controller::sig_addStudent_okButtonClicked, p_model, &Model::slot_addStudent_okButtonClicked);
-
-    connect(p_model, &Model::sig_studentAlreadyExists, this, &Controller::slot_studentAlreadyExists);
-    connect(this, &Controller::sig_studentAlreadyExists, p_view, &View::slot_studentAlreadyExists);
+    connectSignalsSlots();
 }
 
 void Controller::slot_pb_remove_clicked()
@@ -29,7 +23,9 @@ void Controller::slot_pb_remove_clicked()
     if(!selectedIndexes.isEmpty())
     {
         int row_idx = selectedIndexes.first().row();
-        emit sig_pb_remove_clicked(row_idx);
+        int rollID = p_model->item(row_idx, 0)->data().toInt(); //estrapola numero di matricola dello studente in questione
+
+        p_model->slot_pb_remove_clicked(rollID, row_idx);
     }
 }
 
@@ -45,10 +41,26 @@ void Controller::slot_addStudent_okButtonClicked(QLineEdit& le_roll_id, QLineEdi
     else
         gpa = le_gpa.text().toFloat();
 
-    emit sig_addStudent_okButtonClicked(roll_id, name, gpa);
+    p_model->slot_addStudent_okButtonClicked(roll_id, name, gpa);
 }
 
-void Controller::slot_studentAlreadyExists(int roll_id)
+void Controller::slot_studentAddedSuccesfully()
 {
-    emit sig_studentAlreadyExists(roll_id);
+    p_view->get_ui_element()->tableView->setSortingEnabled(true);
+    p_view->p_addStudent_window->slot_studentAddedSuccesfully();
+}
+
+void Controller::connectSignalsSlots()
+{
+    connect(p_view, &View::sig_pb_remove_clicked, this, &Controller::slot_pb_remove_clicked);
+    connect(p_view, &View::sig_addStudent_okButtonClicked, this, &Controller::slot_addStudent_okButtonClicked);
+
+    connect(p_model, &Model::sig_studentAlreadyExists, p_view->p_addStudent_window, &AddStudent_window::slot_studentAlreadyExists);
+    connect(p_model, &Model::sig_studentAddedSuccesfully, this, &Controller::slot_studentAddedSuccesfully);
+}
+
+Controller::~Controller()
+{
+    delete p_view;
+    delete p_model;
 }

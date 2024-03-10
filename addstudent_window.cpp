@@ -19,11 +19,11 @@ AddStudent_window::AddStudent_window(QWidget *parent) :
 
 void AddStudent_window::connectSignalsSlots()
 {
-    connect(ui->buttonBox->button(QDialogButtonBox::Cancel), &QPushButton::clicked, this, &AddStudent_window::sig_cancelButtonClicked);
+    connect(ui->buttonBox->button(QDialogButtonBox::Cancel), &QPushButton::clicked, this, &AddStudent_window::slot_cancelButtonClicked);
     connect(ui->buttonBox->button(QDialogButtonBox::Ok), &QPushButton::clicked, this, &AddStudent_window::slot_okButtonClicked);
-    connect(ui->le_roll_id, &QLineEdit::textChanged, this, &AddStudent_window::validate_input);
-    connect(ui->le_name, &QLineEdit::textChanged, this, &AddStudent_window::validate_input);
-    connect(ui->le_gpa, &QLineEdit::textChanged, this, &AddStudent_window::validate_input);
+    connect(ui->le_roll_id, &QLineEdit::textChanged, this, &AddStudent_window::slot_validate_input);
+    connect(ui->le_name, &QLineEdit::textChanged, this, &AddStudent_window::slot_validate_input);
+    connect(ui->le_gpa, &QLineEdit::textChanged, this, &AddStudent_window::slot_validate_input);
 }
 
 void AddStudent_window::slot_okButtonClicked()
@@ -31,17 +31,34 @@ void AddStudent_window::slot_okButtonClicked()
     emit sig_okButtonClicked(*ui->le_roll_id, *ui->le_name, *ui->le_gpa);
 }
 
-void AddStudent_window::slot_studentAlreadyExists(int roll_id)
+void AddStudent_window::slot_cancelButtonClicked()
 {
-    QMessageBox error_window(this);
-    QString error_msg = QString::fromStdString("Student with Roll number " + std::to_string(roll_id) + " already exists");
-    error_window.critical(this, "Error", error_msg);
+    ui->le_roll_id->clear();
+    ui->le_name->clear();
+    ui->le_gpa->clear();
+    this->reject();
 }
 
-void AddStudent_window::validate_input()
+void AddStudent_window::slot_studentAlreadyExists(int roll_id)
+{
+    QString error_msg = QString::fromStdString("Student with Roll number " + std::to_string(roll_id) + " already exists");
+    QMessageBox msgBox(QMessageBox::Warning, "Error", error_msg);
+    //error_window.information(this, "Error", error_msg);
+    msgBox.exec();
+}
+
+void AddStudent_window::slot_studentAddedSuccesfully()
+{
+    ui->le_roll_id->clear();
+    ui->le_name->clear();
+    ui->le_gpa->clear();
+    this->accept();
+}
+
+void AddStudent_window::slot_validate_input()
 {
     bool setEnabled = true;
-
+    
     if(ui->le_name->text().isEmpty() || ui->le_roll_id->text().isEmpty())
         setEnabled = false;
 
@@ -63,7 +80,7 @@ void AddStudent_window::validate_input()
     else
         ui->lb_no_digits_in_name->hide();
 
-    QRegularExpression rx_gpa = rx_roll;
+    static QRegularExpression rx_gpa(R"([-+]?\d+(\.\d+)?|\d*\.\d+)");
     if(!rx_gpa.match(ui->le_gpa->text()).hasMatch() && !ui->le_gpa->text().isEmpty())
     {
         ui->lb_no_letters_in_gpa->show();

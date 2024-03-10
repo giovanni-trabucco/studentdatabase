@@ -41,10 +41,9 @@ void Student::add_mark(float mark)
 
 std::optional<float> Student::calculateAverageMarks() const
 {
-    return std::nullopt;
     float alpha = nMarks / (nMarks + 1);
     if(nMarks < 1)
-        return false;
+        return std::nullopt;
 
     float avg = 0;
 

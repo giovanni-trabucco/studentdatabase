@@ -1,14 +1,15 @@
 #include "studentdatabase.h"
+#include <functional>
 
 StudentDatabase::StudentDatabase()
 {
     nStudents = 0;
 }
 
-void StudentDatabase::addStudent(const Student& _student)
+void StudentDatabase::addStudent(Student stud)
 {
-    students.push_back(_student);
-    nStudents++;
+    studentsMap.insert(std::pair<int, Student>(stud.get_roll_number(), stud));
+    nStudents = static_cast<int> (studentsMap.size());
 }
 
 float StudentDatabase::calculateAverageMarks() const
@@ -16,41 +17,40 @@ float StudentDatabase::calculateAverageMarks() const
     float avg_total = 0;
     float alpha = nStudents/(nStudents + 1);
 
-    for(const Student& student : students)
+    for(const std::pair<int, Student> pair : studentsMap)
     {
-        std::optional<float> avg_stud = student.calculateAverageMarks();
+        Student stud = pair.second;
+        std::optional<float> avg_stud = stud.calculateAverageMarks();
         if(avg_stud)
             avg_total = avg_total * alpha + (1 - alpha) * avg_stud.value(); //calcola la media di tutti gli studenti
     }
     return avg_total;
 }
 
-std::vector<Student> StudentDatabase::displayStudents() const
+std::map<int, Student> StudentDatabase::getStudentsMap() const
 {
-    return students;
+    return studentsMap;
 }
 
-int StudentDatabase::getNStudents()
+int StudentDatabase::getNStudents() const
 {
     return nStudents;
 }
 
-std::optional<Student> StudentDatabase::findStudentByRollNumber(int _rollNumber)
+std::optional<Student> StudentDatabase::findStudentByRollNumber(int _rollNumber) const
 {
-    for(const Student& stud : students)
-    {
-        if(stud.get_roll_number() == _rollNumber)
-            return stud;
-    }
-    return {};
+    std::map<int, Student>::const_iterator it;
+    it = studentsMap.find(_rollNumber);
+
+    if(it != studentsMap.end())
+        return it->second;
+
+    else return std::nullopt;
 }
 
-void StudentDatabase::removeStudent(int idx)
+void StudentDatabase::removeStudent(int rollID)
 {
-    if(idx < students.size())
-        students.erase(students.begin() + idx);
-
-    else return;
+    studentsMap.erase(rollID);
 }
 
 StudentDatabase::~StudentDatabase()

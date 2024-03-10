@@ -20,7 +20,6 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     addstudent_window.cpp \
     controller.cpp \
-    customstandarditem.cpp \
     customtableview.cpp \
     editstudent_window.cpp \
     main.cpp \

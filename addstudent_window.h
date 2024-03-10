@@ -28,10 +28,12 @@ signals:
 
 private slots:
     void slot_okButtonClicked();
-    void validate_input();
+    void slot_validate_input();
+    void slot_cancelButtonClicked();
 
 public slots:
     void slot_studentAlreadyExists(int roll_id);
+    void slot_studentAddedSuccesfully();
 };
 
 #endif // ADDSTUDENT_WINDOW_H
